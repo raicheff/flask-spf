@@ -54,21 +54,19 @@ def _render_fragment(html_doc):
     response = {}
 
     # `title`: Update document title
-    title = soup.find('title').string
-    if title is not None:
-        response['title'] = title.string
+    tag = soup.title
+    if tag is not None:
+        response['title'] = tag.string
 
     # `url`: Update document URL
-    # TODO
-    url = None
-    if url:
-        response['url'] = url
+    tag = soup.find('link', attrs={'rel': 'spf-url'})
+    if tag is not None:
+        response['url'] = tag['href']
 
     # `head`: Install early JS and CSS
-    # TODO
-    head = None
-    if head:
-        response['head'] = head
+    tags = soup.find_all(['link', 'script'], class_='spf-head')
+    if tags:
+        response['head'] = ''.join(str(tag) for tag in tags)
 
     # `attr`: Set element attributes
     # TODO
@@ -77,6 +75,7 @@ def _render_fragment(html_doc):
         response['attr'] = attr
 
     # `body`: Set element content and install JS and CSS
+    # TODO
     body = {}
     s = str(soup.find(id='main').div)
     body['main'] = s
@@ -84,10 +83,9 @@ def _render_fragment(html_doc):
         response['body'] = body
 
     # `foot`: Install late JS and CSS
-    # TODO
-    foot = None
-    if foot:
-        response['foot'] = foot
+    tags = soup.find_all(['link', 'script'], class_='spf-foot')
+    if tags:
+        response['foot'] = ''.join(str(tag) for tag in tags)
 
     return jsonify(response)
 
