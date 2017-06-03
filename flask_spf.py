@@ -59,11 +59,13 @@ def _render_fragment(html_doc):
         response['title'] = tag.string
 
     # `url`: Update document URL
+    # >> `<link rel="spf-url" href="/foo/bar">`
     tag = soup.find('link', attrs={'rel': 'spf-url'})
     if tag is not None:
         response['url'] = tag['href']
 
     # `head`: Install early JS and CSS
+    # >> `<link rel="stylesheet" href="/assets/css/page.css" class="spf-head" name="page">`
     tags = soup.find_all(['link', 'script'], class_='spf-head')
     if tags:
         response['head'] = ''.join(str(tag) for tag in tags)
@@ -83,6 +85,7 @@ def _render_fragment(html_doc):
         response['body'] = body
 
     # `foot`: Install late JS and CSS
+    # >> `<script src="https://platform.twitter.com/widgets.js" class="spf-foot" name="twitter" async defer></script>`
     tags = soup.find_all(['link', 'script'], class_='spf-foot')
     if tags:
         response['foot'] = ''.join(str(tag) for tag in tags)
