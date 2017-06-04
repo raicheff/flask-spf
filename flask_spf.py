@@ -10,6 +10,7 @@ import bs4
 import flask
 
 from flask import jsonify, render_template, request
+from htmlmin import minify
 
 
 class SPF(object):
@@ -17,7 +18,18 @@ class SPF(object):
     Flask-SPF
 
     Documentation:
+
     https://flask-spf.readthedocs.io
+
+    Usage:
+
+    `<link rel="spf-url" href="/foo/bar">`
+
+    `<link rel="stylesheet" href="/assets/css/page.css" class="spf-head" name="page">`
+
+    `<main id="main" class="spf-body">...</main>`
+
+    `<script src="https://platform.twitter.com/widgets.js" class="spf-foot" name="twitter" async defer></script>`
 
     :param app: Flask app to initialize with. Defaults to `None`
     """
@@ -56,39 +68,37 @@ def _render_fragment(html_doc):
     # `title`: Update document title
     tag = soup.title
     if tag is not None:
-        response['title'] = tag.string
+        response['title'] = tag.string.strip()
 
     # `url`: Update document URL
-    # >> `<link rel="spf-url" href="/foo/bar">`
-    tag = soup.find('link', attrs={'rel': 'spf-url'})
+    tag = soup.find('link', rel='spf-url')
     if tag is not None:
-        response['url'] = tag['href']
+        response['url'] = tag['href'].strip()
 
     # `head`: Install early JS and CSS
-    # >> `<link rel="stylesheet" href="/assets/css/page.css" class="spf-head" name="page">`
-    tags = soup.find_all(['link', 'script'], class_='spf-head')
-    if tags:
-        response['head'] = ''.join(str(tag) for tag in tags)
+    head = ''.join(str(tag).strip() for tag in soup(['link', 'script'], class_='spf-head'))
+    if head:
+        response['head'] = minify(head)
 
     # `attr`: Set element attributes
-    # TODO
     attr = {}
+    # TODO: spf-attr
+    # --------------
+    tag = soup.body
+    attr['x-body'] = {'data-namespace': tag['data-namespace']}
+    # --------------
     if attr:
         response['attr'] = attr
 
     # `body`: Set element content and install JS and CSS
-    # TODO
-    body = {}
-    s = str(soup.find(id='main').div)
-    body['main'] = s
+    body = {tag['id']: minify(str(tag).strip()) for tag in soup(class_='spf-body')}
     if body:
         response['body'] = body
 
     # `foot`: Install late JS and CSS
-    # >> `<script src="https://platform.twitter.com/widgets.js" class="spf-foot" name="twitter" async defer></script>`
-    tags = soup.find_all(['link', 'script'], class_='spf-foot')
-    if tags:
-        response['foot'] = ''.join(str(tag) for tag in tags)
+    foot = ''.join(str(tag) for tag in soup(['link', 'script'], class_='spf-foot'))
+    if foot:
+        response['foot'] = minify(foot)
 
     return jsonify(response)
 
