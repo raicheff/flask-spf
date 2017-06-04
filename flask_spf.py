@@ -6,11 +6,11 @@
 #
 
 
-import bs4
 import flask
 
+from bs4 import BeautifulSoup
 from flask import jsonify, render_template, request
-from htmlmin import minify
+from htmlmin import Minifier
 
 
 class SPF(object):
@@ -42,6 +42,15 @@ class SPF(object):
         """"""
 
 
+_minifier = Minifier(
+    remove_comments=True,
+    remove_empty_space=True,
+    reduce_empty_attributes=True,
+    reduce_boolean_attributes=True,
+    remove_optional_attribute_quotes=False,
+)
+
+
 def _render_template(template_name_or_list, **context):
     """"""
 
@@ -61,7 +70,7 @@ def _render_fragment(html_doc):
     http://stackoverflow.com/questions/32512568/how-to-render-only-given-block-using-jinja2-with-flask-and-pjax
     """
 
-    soup = bs4.BeautifulSoup(html_doc, 'html.parser')
+    soup = BeautifulSoup(html_doc, 'html.parser')
 
     response = {}
 
@@ -76,9 +85,9 @@ def _render_fragment(html_doc):
         response['url'] = tag['href'].strip()
 
     # `head`: Install early JS and CSS
-    head = ''.join(str(tag).strip() for tag in soup(['link', 'script'], class_='spf-head'))
+    head = ''.join(str(tag) for tag in soup(['link', 'script'], class_='spf-head'))
     if head:
-        response['head'] = minify(head)
+        response['head'] = _minifier.minify(head)
 
     # `attr`: Set element attributes
     attr = {}
@@ -91,14 +100,14 @@ def _render_fragment(html_doc):
         response['attr'] = attr
 
     # `body`: Set element content and install JS and CSS
-    body = {tag['id']: minify(str(tag).strip()) for tag in soup(class_='spf-body')}
+    body = {tag['id']: _minifier.minify(str(tag)) for tag in soup(class_='spf-body')}
     if body:
         response['body'] = body
 
     # `foot`: Install late JS and CSS
     foot = ''.join(str(tag) for tag in soup(['link', 'script'], class_='spf-foot'))
     if foot:
-        response['foot'] = minify(foot)
+        response['foot'] = _minifier.minify(foot)
 
     return jsonify(response)
 
