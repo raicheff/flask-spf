@@ -27,6 +27,8 @@ class SPF(object):
 
     `<link rel="stylesheet" href="/assets/css/page.css" class="spf-head" name="page">`
 
+    `<div id="some-div" data-foo="foo" data-bar="bar" data-spf-attr="data-foo data-bar">`
+
     `<main id="main" class="spf-body">...</main>`
 
     `<script src="https://platform.twitter.com/widgets.js" class="spf-foot" name="twitter" async defer></script>`
@@ -40,6 +42,7 @@ class SPF(object):
 
     def init_app(self, app):
         """"""
+        # TODO
 
 
 _minifier = Minifier(
@@ -91,11 +94,9 @@ def _render_fragment(html_doc):
 
     # `attr`: Set element attributes
     attr = {}
-    # TODO: spf-attr
-    # --------------
-    tag = soup.body
-    attr['x-body'] = {'data-namespace': tag['data-namespace']}
-    # --------------
+    tags = soup(lambda tag: tag.has_attr('data-spf-attr'))
+    for tag in tags:
+        attr[tag['id']] = {name: tag[name] for name in tag.get_attribute_list('data-spf-attr')}
     if attr:
         response['attr'] = attr
 
