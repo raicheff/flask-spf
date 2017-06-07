@@ -58,7 +58,11 @@ def _render_template(template_name_or_list, **context):
 
     response = render_template(template_name_or_list, **context)
 
-    if request.args.get(current_app.config.get('SPF_URL_IDENTIFIER')) in ('load', 'navigate'):
+    criteria = (
+        request.args.get(current_app.config.get('SPF_URL_IDENTIFIER')) in ('load', 'navigate'),
+        'X-SPF-REFERER' in request.headers,
+    )
+    if any(criteria):
         response = _render_fragment(response)
 
     return response
