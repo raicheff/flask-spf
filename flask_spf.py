@@ -9,7 +9,7 @@
 import flask
 
 from bs4 import BeautifulSoup
-from flask import jsonify, render_template, request
+from flask import current_app, jsonify, render_template, request
 from htmlmin import Minifier
 
 
@@ -41,8 +41,7 @@ class SPF(object):
             self.init_app(app)
 
     def init_app(self, app):
-        """"""
-        # TODO
+        app.config.setdefault('SPF_URL_IDENTIFIER', 'spf')
 
 
 _minifier = Minifier(
@@ -59,7 +58,7 @@ def _render_template(template_name_or_list, **context):
 
     response = render_template(template_name_or_list, **context)
 
-    if request.args.get('spf') in ('load', 'navigate'):
+    if request.args.get(current_app.config.get('SPF_URL_IDENTIFIER')) in ('load', 'navigate'):
         response = _render_fragment(response)
 
     return response
@@ -83,14 +82,14 @@ def _render_fragment(html_doc):
         response['title'] = tag.string.strip()
 
     # `url`: Update document URL
-    tag = soup.find('link', rel='spf-url')
+    tag = soup.find('link', rel='spf-url') or soup.find('link', rel='canonical')
     if tag is not None:
         response['url'] = tag['href'].strip()
 
     # `head`: Install early JS and CSS
-    head = ''.join(str(tag) for tag in soup(['link', 'script'], class_='spf-head'))
+    head = ''.join(tag.decode() for tag in soup(['link', 'script'], class_='spf-head'))
     if head:
-        response['head'] = _minifier.minify(head)
+        response['head'] = _minifier.minify(head).strip()
 
     # `attr`: Set element attributes
     attr = {}
@@ -101,14 +100,18 @@ def _render_fragment(html_doc):
         response['attr'] = attr
 
     # `body`: Set element content and install JS and CSS
-    body = {tag['id']: _minifier.minify(str(tag)) for tag in soup(class_='spf-body')}
+    body = {tag['id']: _minifier.minify(tag.decode_contents()).strip() for tag in soup(class_='spf-body')}
     if body:
         response['body'] = body
 
     # `foot`: Install late JS and CSS
-    foot = ''.join(str(tag) for tag in soup(['link', 'script'], class_='spf-foot'))
+    foot = ''.join(tag.decode() for tag in soup(['link', 'script'], class_='spf-foot'))
     if foot:
-        response['foot'] = _minifier.minify(foot)
+        response['foot'] = _minifier.minify(foot).strip()
+
+    # `name`: ...
+    # TODO
+    # response['name'] = request.endpoint.replace('.', '-')
 
     return jsonify(response)
 
