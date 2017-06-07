@@ -59,7 +59,7 @@ def _render_template(template_name_or_list, **context):
 
     response = render_template(template_name_or_list, **context)
 
-    if request.args.get('spf') == 'navigate':
+    if request.args.get('spf') in ('load', 'navigate'):
         response = _render_fragment(response)
 
     return response
