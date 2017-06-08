@@ -36,21 +36,29 @@ class SPF(object):
     :param app: Flask app to initialize with. Defaults to `None`
     """
 
-    def __init__(self, app=None):
-        if app is not None:
-            self.init_app(app)
+    minifier = None
 
-    def init_app(self, app):
+    def __init__(self, app=None, **kwargs):
+        if app is not None:
+            self.init_app(app, **kwargs)
+
+    def init_app(self, app, **kwargs):
+
+        # Config
         app.config.setdefault('SPF_URL_IDENTIFIER', 'spf')
 
+        # Minifier
+        defaults = dict(
+            remove_comments=True,
+            remove_empty_space=True,
+            reduce_empty_attributes=True,
+            reduce_boolean_attributes=True,
+            remove_optional_attribute_quotes=False,
+        )
+        defaults.update(kwargs)
+        self.minifier = Minifier(defaults)
 
-_minifier = Minifier(
-    remove_comments=True,
-    remove_empty_space=True,
-    reduce_empty_attributes=True,
-    reduce_boolean_attributes=True,
-    remove_optional_attribute_quotes=False,
-)
+        app.extensions['spf'] = self
 
 
 def _render_template(template_name_or_list, **context):
@@ -78,6 +86,8 @@ def _render_fragment(html_doc):
 
     soup = BeautifulSoup(html_doc, 'html.parser')
 
+    minifier = current_app.extensions['spf'].minifier
+
     response = {}
 
     # `title`: Update document title
@@ -93,7 +103,7 @@ def _render_fragment(html_doc):
     # `head`: Install early JS and CSS
     head = ''.join(tag.decode() for tag in soup(['link', 'script'], class_='spf-head'))
     if head:
-        response['head'] = _minifier.minify(head).strip()
+        response['head'] = minifier.minify(head).strip()
 
     # `attr`: Set element attributes
     attr = {}
@@ -104,14 +114,14 @@ def _render_fragment(html_doc):
         response['attr'] = attr
 
     # `body`: Set element content and install JS and CSS
-    body = {tag['id']: _minifier.minify(tag.decode_contents()).strip() for tag in soup(class_='spf-body')}
+    body = {tag['id']: minifier.minify(tag.decode_contents()).strip() for tag in soup(class_='spf-body')}
     if body:
         response['body'] = body
 
     # `foot`: Install late JS and CSS
     foot = ''.join(tag.decode() for tag in soup(['link', 'script'], class_='spf-foot'))
     if foot:
-        response['foot'] = _minifier.minify(foot).strip()
+        response['foot'] = minifier.minify(foot).strip()
 
     # `name`: ...
     # TODO
