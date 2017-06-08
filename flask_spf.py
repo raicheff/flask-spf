@@ -45,6 +45,7 @@ class SPF(object):
     def init_app(self, app, **kwargs):
 
         # Config
+        app.config.setdefault('SPF_HTML_PARSER', 'html.parser')
         app.config.setdefault('SPF_URL_IDENTIFIER', 'spf')
 
         # Minifier
@@ -84,7 +85,7 @@ def _render_fragment(html_doc):
     http://stackoverflow.com/questions/32512568/how-to-render-only-given-block-using-jinja2-with-flask-and-pjax
     """
 
-    soup = BeautifulSoup(html_doc, 'html.parser')
+    soup = BeautifulSoup(html_doc, current_app.config['SPF_HTML_PARSER'])
 
     minifier = current_app.extensions['spf'].minifier
 
