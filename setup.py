@@ -16,7 +16,7 @@ setup(
     author='Boris Raicheff',
     author_email='b@raicheff.com',
     url='https://github.com/raicheff/flask-spf',
-    install_requires=('flask', 'six', 'beautifulsoup4'),
+    install_requires=('flask', 'beautifulsoup4'),
     packages=find_packages(),
 )
 

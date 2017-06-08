@@ -10,7 +10,6 @@ import flask
 
 from bs4 import BeautifulSoup
 from flask import current_app, jsonify, render_template, request
-from htmlmin import Minifier
 
 
 class SPF(object):
@@ -38,26 +37,15 @@ class SPF(object):
 
     minifier = None
 
-    def __init__(self, app=None, **kwargs):
+    def __init__(self, app=None):
+
         if app is not None:
-            self.init_app(app, **kwargs)
+            self.init_app(app)
 
-    def init_app(self, app, **kwargs):
+    def init_app(self, app):
 
-        # Config
         app.config.setdefault('SPF_HTML_PARSER', 'html.parser')
         app.config.setdefault('SPF_URL_IDENTIFIER', 'spf')
-
-        # Minifier
-        defaults = dict(
-            remove_comments=True,
-            remove_empty_space=True,
-            reduce_empty_attributes=True,
-            reduce_boolean_attributes=True,
-            remove_optional_attribute_quotes=False,
-        )
-        defaults.update(kwargs)
-        self.minifier = Minifier(defaults)
 
         app.extensions['spf'] = self
 
@@ -85,11 +73,9 @@ def _render_fragment(html_doc):
     http://stackoverflow.com/questions/32512568/how-to-render-only-given-block-using-jinja2-with-flask-and-pjax
     """
 
-    soup = BeautifulSoup(html_doc, current_app.config['SPF_HTML_PARSER'])
-
-    minifier = current_app.extensions['spf'].minifier
-
     response = {}
+
+    soup = BeautifulSoup(html_doc, current_app.config['SPF_HTML_PARSER'])
 
     # `title`: Update document title
     tag = soup.title
@@ -104,7 +90,7 @@ def _render_fragment(html_doc):
     # `head`: Install early JS and CSS
     head = ''.join(tag.decode() for tag in soup(['link', 'script'], class_='spf-head'))
     if head:
-        response['head'] = minifier.minify(head).strip()
+        response['head'] = head.strip()
 
     # `attr`: Set element attributes
     attr = {}
@@ -115,14 +101,14 @@ def _render_fragment(html_doc):
         response['attr'] = attr
 
     # `body`: Set element content and install JS and CSS
-    body = {tag['id']: minifier.minify(tag.decode_contents()).strip() for tag in soup(class_='spf-body')}
+    body = {tag['id']: tag.decode_contents().strip() for tag in soup(class_='spf-body')}
     if body:
         response['body'] = body
 
     # `foot`: Install late JS and CSS
     foot = ''.join(tag.decode() for tag in soup(['link', 'script'], class_='spf-foot'))
     if foot:
-        response['foot'] = minifier.minify(foot).strip()
+        response['foot'] = foot.strip()
 
     # `name`: ...
     # TODO
