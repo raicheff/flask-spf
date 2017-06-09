@@ -110,9 +110,13 @@ def _render_fragment(html_doc):
     if foot:
         response['foot'] = foot.strip()
 
-    # `name`: ...
-    # TODO
+    # `name`: <undocumented>
     # response['name'] = request.endpoint.replace('.', '-')
+
+    # `push`: <custom>
+    tag = soup.find(class_='spf-push')
+    if tag is not None:
+        response['push'] = tag.decode().strip()
 
     return jsonify(response)
 
