@@ -96,7 +96,7 @@ def _render_fragment(html_doc):
     attr = {}
     tags = soup(lambda tag: tag.has_attr('data-spf-attr'))
     for tag in tags:
-        attr[tag['id']] = {name: tag[name] for name in tag.get_attribute_list('data-spf-attr')}
+        attr[tag['id']] = {name: tag[name] for name in tag['data-spf-attr'].split()}
     if attr:
         response['attr'] = attr
 
