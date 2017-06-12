@@ -88,9 +88,9 @@ def _render_fragment(html_doc):
         response['url'] = tag['href'].strip()
 
     # `head`: Install early JS and CSS
-    head = ''.join(tag.decode() for tag in soup(['link', 'script', 'style'], class_='spf-head'))
+    head = ''.join(tag.decode().strip() for tag in soup(['link', 'script', 'style'], class_='spf-head'))
     if head:
-        response['head'] = head.strip()
+        response['head'] = head
 
     # `attr`: Set element attributes
     attr = {}
@@ -106,9 +106,9 @@ def _render_fragment(html_doc):
         response['body'] = body
 
     # `foot`: Install late JS and CSS
-    foot = ''.join(tag.decode() for tag in soup(['link', 'script', 'style'], class_='spf-foot'))
+    foot = ''.join(tag.decode().strip() for tag in soup(['link', 'script', 'style'], class_='spf-foot'))
     if foot:
-        response['foot'] = foot.strip()
+        response['foot'] = foot
 
     # `name`: <undocumented>
     # response['name'] = request.endpoint.replace('.', '-')
