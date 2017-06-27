@@ -55,12 +55,14 @@ def _render_template(template_name_or_list, **context):
 
     response = render_template(template_name_or_list, **context)
 
-    criteria = (
-        request.args.get(current_app.config.get('SPF_URL_IDENTIFIER')) in ('load', 'navigate'),
-        'X-SPF-REFERER' in request.headers,
-    )
-    if any(criteria):
-        response = _render_fragment(response)
+    # https://stackoverflow.com/questions/40284800/check-if-flask-request-context-is-available
+    if request:
+        criteria = (
+            request.args.get(current_app.config.get('SPF_URL_IDENTIFIER')) in ('load', 'navigate'),
+            'X-SPF-REFERER' in request.headers,
+        )
+        if any(criteria):
+            response = _render_fragment(response)
 
     return response
 
