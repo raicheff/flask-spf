@@ -9,7 +9,13 @@
 import flask
 
 from bs4 import BeautifulSoup
-from flask import current_app, jsonify, render_template, request
+from flask import (
+    Response,
+    current_app,
+    jsonify,
+    render_template,
+    request,
+)
 
 
 class SPF(object):
@@ -55,11 +61,15 @@ def _render_template(template_name_or_list, **context):
 
     response = render_template(template_name_or_list, **context)
 
+    if isinstance(response, Response):
+        # Explosions, etc.
+        return response
+
     # https://stackoverflow.com/questions/40284800/check-if-flask-request-context-is-available
     if request:
         criteria = (
             request.args.get(current_app.config.get('SPF_URL_IDENTIFIER')) in ('load', 'navigate'),
-            'X-SPF-REFERER' in request.headers,
+            'X-SPF-Referer' in request.headers,
         )
         if any(criteria):
             response = _render_fragment(response)
